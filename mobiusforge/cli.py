@@ -217,6 +217,41 @@ def lessons(config_path: str) -> None:
         click.echo("No lessons learned yet.")
 
 
+@cli.command()
+@click.option("--config", "config_path", type=click.Path(), default="config.yaml")
+def dashboard(config_path: str) -> None:
+    """Open the live TUI dashboard."""
+    config = load_config(Path(config_path))
+    working_dir = Path(config.project.path).resolve()
+
+    from mobiusforge.monitor.dashboard import run_dashboard
+
+    run_dashboard(working_dir)
+
+
+@cli.command()
+@click.option("--config", "config_path", type=click.Path(), default="config.yaml")
+def dag(config_path: str) -> None:
+    """Visualize task dependency graph."""
+    config = load_config(Path(config_path))
+    working_dir = Path(config.project.path).resolve()
+
+    from mobiusforge.memory.state import TaskPlan
+    from mobiusforge.orchestration.dag import TaskDAG
+
+    plan = TaskPlan(working_dir / "task_plan.md")
+    task_dag = TaskDAG(plan)
+    click.echo(task_dag.visualize())
+
+    parallel = task_dag.get_parallel_groups()
+    if parallel:
+        click.echo(f"\nParallel opportunities: {len(parallel)} layers")
+        for i, layer in enumerate(parallel):
+            if len(layer) > 1:
+                names = ", ".join(t.id for t in layer)
+                click.echo(f"  Layer {i + 1}: {names} can run simultaneously")
+
+
 def _run_dry_run(config, working_dir: Path) -> None:
     """Simulate the loop without actually running the agent."""
     from mobiusforge.memory.state import TaskPlan
