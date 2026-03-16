@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mobiusforge/logs/
+.mobiusforge/raw/
+.mobiusforge/budget.json
+.env
+*.egg

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mobiusforge"
+version = "0.1.0"
+description = "MobiusForge - Autonomous Agent Harness for Ralphthon"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+tui = [
+    "textual>=0.50",
+    "rich>=13.0",
+]
+
+[project.scripts]
+mobiusforge = "mobiusforge.cli:cli"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

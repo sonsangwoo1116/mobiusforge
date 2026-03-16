@@ -1,0 +1,57 @@
+# MobiusForge Configuration
+project:
+  name: "my-project"
+  path: "."
+
+agent:
+  type: "claude-code"
+  model: "claude-sonnet-4-6"
+  timeout_per_loop: 600
+  permission_mode: "dontAsk"
+  allowed_tools:
+    - Read
+    - Write
+    - Edit
+    - Bash
+    - Glob
+    - Grep
+
+loop:
+  max_iterations: 100
+  max_parallel_agents: 2
+  cooldown_seconds: 5
+  max_total_time: 43200
+  end_time: ""
+  wind_down_minutes: 30
+
+budget:
+  max_total_cost: 50.0
+  warn_at_percent: 80
+  cost_per_1k_input: 0.003
+  cost_per_1k_output: 0.015
+
+validation:
+  test_command: "pytest"
+  lint_command: "ruff check ."
+  auto_commit: true
+  auto_rollback: true
+  completion_verify: true
+
+safety:
+  oscillation_threshold: 3
+  oscillation_window: 5
+  max_strategy_retries: 3
+  dead_end_action: "skip"
+  drift_check_interval: 5
+  drift_threshold: 0.7
+
+memory:
+  max_lessons: 30
+  prune_strategy: "relevance_decay"
+  use_claude_memory: true
+
+monitoring:
+  dashboard: true
+  log_level: "INFO"
+  save_raw_output: true
+  mask_secrets: true
