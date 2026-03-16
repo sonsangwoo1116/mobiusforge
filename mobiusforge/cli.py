@@ -205,6 +205,62 @@ def cost(config_path: str) -> None:
 
 @cli.command()
 @click.option("--config", "config_path", type=click.Path(), default="config.yaml")
+@click.option("--auto-fix", is_flag=True, help="Auto-apply guardrails from analysis")
+def analyze(config_path: str, auto_fix: bool) -> None:
+    """Analyze execution patterns and suggest improvements (Flywheel)."""
+    config = load_config(Path(config_path))
+    working_dir = Path(config.project.path).resolve()
+    mf_dir = working_dir / ".mobiusforge"
+
+    from mobiusforge.flywheel.analyzer import analyze_execution
+    from mobiusforge.flywheel.tuner import (
+        auto_apply_guardrails,
+        generate_prompt_improvements,
+        generate_spec_refinements,
+    )
+    from mobiusforge.memory.lessons import LessonsManager
+
+    analysis = analyze_execution(
+        mf_dir / "logs",
+        mf_dir / "budget.json",
+        mf_dir / "lessons.md",
+    )
+
+    click.echo("=== Harness Self-Analysis ===\n")
+    click.echo(analysis.summary())
+
+    if analysis.stats:
+        click.echo("\nStats:")
+        for key, val in analysis.stats.items():
+            click.echo(f"  {key}: {val}")
+
+    # Prompt improvements
+    lessons = LessonsManager(mf_dir / "lessons.md")
+    prompt_suggestions = generate_prompt_improvements(
+        analysis, lessons, working_dir / "PROMPT.md"
+    )
+    if prompt_suggestions:
+        click.echo("\nPrompt Improvements:")
+        for s in prompt_suggestions:
+            click.echo(f"  - {s}")
+
+    # Spec refinements
+    refinements = generate_spec_refinements(lessons, working_dir / "specs")
+    if refinements:
+        click.echo("\nSpec Refinements:")
+        for spec_name, suggestions in refinements.items():
+            click.echo(f"  {spec_name}:")
+            for s in suggestions:
+                click.echo(f"    - {s}")
+
+    # Auto-apply guardrails
+    if auto_fix and analysis.high_severity_count > 0:
+        added = auto_apply_guardrails(analysis, mf_dir / "guardrails.md")
+        click.echo(f"\nAuto-applied {added} guardrails")
+
+
+@cli.command()
+@click.option("--config", "config_path", type=click.Path(), default="config.yaml")
 def lessons(config_path: str) -> None:
     """Show learned lessons."""
     config = load_config(Path(config_path))

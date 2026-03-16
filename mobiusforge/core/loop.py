@@ -129,6 +129,10 @@ class MobiusLoop:
                     logger.info("All tasks completed!")
                     break
 
+                # --- Flywheel: periodic self-analysis (FR-024) ---
+                if loops_run > 0 and loops_run % 20 == 0:
+                    self._run_flywheel(loops_run)
+
                 # --- Select task ---
                 task = self.task_plan.get_next_task()
                 if task is None:
@@ -383,6 +387,32 @@ class MobiusLoop:
         logger.info("Task %s completed in %d loops", task.id, task.loops_taken)
 
         return LoopOutcome.COMPLETED
+
+    def _run_flywheel(self, loop_num: int) -> None:
+        """Run periodic self-analysis and auto-improvement (FR-024, FR-025, FR-026)."""
+        try:
+            from mobiusforge.flywheel.analyzer import analyze_execution
+            from mobiusforge.flywheel.tuner import auto_apply_guardrails
+
+            analysis = analyze_execution(
+                self.mobiusforge_dir / "logs",
+                self.mobiusforge_dir / "budget.json",
+                self.mobiusforge_dir / "lessons.md",
+            )
+
+            if analysis.insights:
+                logger.info("Flywheel analysis (loop %d): %s", loop_num, analysis.summary())
+
+                # Auto-apply high-severity guardrails
+                if analysis.high_severity_count > 0:
+                    added = auto_apply_guardrails(
+                        analysis, self.mobiusforge_dir / "guardrails.md"
+                    )
+                    if added:
+                        logger.info("Flywheel: auto-applied %d guardrails", added)
+
+        except Exception as e:
+            logger.debug("Flywheel analysis failed (non-critical): %s", e)
 
     def _handle_failure(self, loop_num: int, task: Task, spec: str, error: str) -> None:
         """Common failure handling: record lesson + strategy rotation."""
