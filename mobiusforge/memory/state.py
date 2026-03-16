@@ -106,7 +106,12 @@ class TaskPlan:
         """Select the next actionable task respecting dependencies and priority."""
         done_ids = {t.id for t in self.tasks if t.status == TaskStatus.DONE}
 
-        # Interrupted tasks first (resume)
+        # IN_PROGRESS tasks first (retry after failure)
+        for task in self.tasks:
+            if task.status == TaskStatus.IN_PROGRESS:
+                return task
+
+        # Interrupted tasks next (resume after shutdown)
         for task in self.tasks:
             if task.status == TaskStatus.INTERRUPTED:
                 deps_met = all(d in done_ids for d in task.depends_on)
